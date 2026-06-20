@@ -1,5 +1,7 @@
 # codex-collab
 
+**English** · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md)
+
 A playbook for pairing Claude and [Codex](https://developers.openai.com/codex)
 as a two-model team inside [Claude Code](https://claude.com/claude-code): Claude
 plans, reviews, and gates; Codex executes and first-pass reviews. It encodes a
@@ -161,17 +163,32 @@ Notes:
 If `codex:codex-rescue` shows up in `/agents` and a review round-trips, you're
 ready. Then just start a multi-round task — Claude will reach for it.
 
-## Usage
+## Usage patterns
 
-- **Multi-round streams (recommended)** → run the [dual-workflow model](#recommended-usage--the-dual-workflow-model):
-  ultracode + Workflow fan-out. Claude writes acceptance criteria, fans out
-  Codex executor lanes (worktree-isolated for parallel work), runs fresh Codex
-  first-pass reviews, then re-runs the oracle itself at the gate before merge.
-  This is the default and the intended way to use codex-collab.
-- **Research / exploratory** → the same model with an inverted rhythm: pre-
-  register metrics and thresholds before implementation; only a fixed,
-  deterministic evaluator declares success; stop-loss at 2–3 rounds per
-  hypothesis.
+The recommended default is multi-round feature work via the dual-workflow model,
+but the same Claude-judges / Codex-executes split fits many shapes:
+
+- **Multi-round feature work (recommended)** → the [dual-workflow model](#recommended-usage--the-dual-workflow-model):
+  Claude writes acceptance criteria, fans out Codex executor lanes (worktree-
+  isolated for parallel work), runs fresh Codex first-pass reviews, then re-runs
+  the oracle itself at the gate before merge.
+- **Cross-model code review** → run `/codex:review` or `/codex:adversarial-review`
+  on a diff or PR for an independent second-model pass. A different model catches
+  the blind spots a same-model self-review rubber-stamps.
+- **Large refactor / migration** → fan out one Codex lane per file (worktree
+  isolation), each with an explicit do-not-touch list, then cherry-pick the
+  disjoint commits. Scale beyond what a single context can hold.
+- **Bug hunt / audit** → loop-until-dry: each round fans out Codex finders and
+  adversarially verifies every finding (a majority "refute" kills it); stop after
+  K empty rounds.
+- **Test generation** → parallel Codex lanes add tests for untested modules;
+  Claude re-runs the suite itself at the gate before trusting them.
+- **Cost-optimized bulk reading** → delegate wide reading to a read-only Codex
+  recon lane that returns a report; Claude reads the report and spot-checks key
+  files, spending premium tokens only on judgment.
+- **Research / exploratory** → an inverted rhythm: pre-register metrics and
+  thresholds before implementation; only a fixed, deterministic evaluator
+  declares success; stop-loss at 2–3 rounds per hypothesis.
 - **Single-round trivia** → skip the ceremony; Claude does it or delegates one
   lane directly.
 
